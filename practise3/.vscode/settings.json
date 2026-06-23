@@ -1,0 +1,16 @@
+{
+  "C_Cpp.formatting": "vcFormat", // 用和 MSVC 一样的格式化
+  "C_Cpp.vcFormat.space.beforeParenthesis": true,
+  "C_Cpp.vcFormat.space.aroundBinaryOperators": true,
+  "C_Cpp.vcFormat.space.afterComma": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.tabWidth": 4,
+  "prettier.useTabs": false,
+  "prettier.spaceBeforeFunctionParen": true,
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
+}

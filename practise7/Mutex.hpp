@@ -39,7 +39,7 @@ namespace MutexModule
     class LockGuard
     {
     public:
-        LockGuard(Mutex mutex)
+        LockGuard(Mutex &mutex)
         : _mutex(mutex)
         {
             _mutex.Lock();

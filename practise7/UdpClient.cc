@@ -79,6 +79,8 @@ int main(int argc, char *argv[])
     Recver.Start();
     Sender.Start();
 
+    id = Recver.Id();
+
     Recver.Join();
     Sender.Join();
 

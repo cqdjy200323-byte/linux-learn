@@ -11,6 +11,7 @@
 #include "Log.hpp"
 #include "InetAddr.hpp"
 #include <cstring>
+#include <unistd.h> 
 
 using namespace LogModule;
 

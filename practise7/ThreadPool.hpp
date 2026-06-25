@@ -103,7 +103,7 @@ namespace ThreadPoolModule
                 T t;
                 {
                     LockGuard lockguard(_mutex);
-                    while (_isrunning && _task_queue.empty())
+                    while ( _task_queue.empty()&&_isrunning)
                     {
                         _sleepernum++;
                         _cond.Wait(_mutex);

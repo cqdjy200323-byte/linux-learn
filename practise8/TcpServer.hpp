@@ -18,19 +18,34 @@
 using namespace LogModule;
 using namespace ThreadPoolModule;
 
-using task_t = std::function<void()>;
+using func_t = std::function<void(const std::string&,InetAddr &)>;
 const static int backlog = 8;
 class TcpServer
 {
 public:
-    TcpServer(uint16_t port)
+    TcpServer(uint16_t port,func_t func)
         : _port(port)
+        ,_func(func)
     {
     }
 
     ~TcpServer()
     {
     }
+
+    class ThreadData
+    {
+    public:
+        ThreadData(int sockfd, InetAddr &addr, TcpServer *td)
+            : _sockfd(sockfd), _addr(addr), _tsvr(td)
+        {
+        }
+
+    public:
+        int _sockfd;
+        InetAddr _addr;
+        TcpServer *_tsvr;
+    };
 
     void Init()
     {
@@ -70,10 +85,7 @@ public:
             {
                 buffer[n] = 0;
                 LOG(LogLevel::DEBUG) << addr.StringAddr() << " #" << buffer;
-                std::string echo_string = "echo# ";
-                echo_string += buffer;
-
-                write(sockfd, echo_string.c_str(), echo_string.size());
+                _func(buffer, addr);
             }
             else if (n == 0)
             {
@@ -89,6 +101,15 @@ public:
             }
         }
     }
+    static void *Routine(void *args)
+    {
+        pthread_detach(pthread_self());
+        ThreadData *td = static_cast<ThreadData *>(args);
+        td->_tsvr->Service(td->_sockfd, td->_addr);
+        delete td;
+        return nullptr;
+    }
+
     void Run()
     {
         _isrunning = true;
@@ -103,9 +124,16 @@ public:
                 continue;
             }
             InetAddr addr(peer);
-            ThreadPool<task_t>::GetInstance()->Enqueue(
-                [this, sockfd, &addr]()
-                { this->Service(sockfd, addr); });
+            // 线程池
+            // InetAddr addr(peer);
+            // ThreadPool<task_t>::GetInstance()->Enqueue(
+            //     [this, sockfd, &addr]()
+            //     { this->Service(sockfd, addr); });
+
+            // 多线程
+            ThreadData *td = new ThreadData(sockfd, addr, this);
+            pthread_t tid;
+            pthread_create(&tid, nullptr, Routine, td);
         }
         _isrunning = false;
     }
@@ -114,4 +142,5 @@ private:
     uint16_t _port;
     int _listensockfd;
     bool _isrunning;
+    func_t _func;
 };

@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include "common.hpp"
+#include "Common.hpp"
 
 class InetAddr
 {

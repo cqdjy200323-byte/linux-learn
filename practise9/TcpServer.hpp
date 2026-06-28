@@ -3,16 +3,22 @@
 #include <iostream>
 #include <sys/wait.h>
 #include <functional>
+#include"Common.hpp"
 
 using namespace SocketModule;
 using namespace LogModule;
 
 using ioservice_t=std::function<void(std::shared_ptr<Socket>& sock,InetAddr& client)>;
+
+
 class TcpServer
 {
 public:
     TcpServer(uint16_t port,ioservice_t service)
-        : _port(port), _isrunning(false),_service(service)
+        : _port(port)
+        , _isrunning(false)
+        ,_service(service)
+        ,_listensocket(std::make_unique<TcpSocket>())
     {
         _listensocket->BuildTcpSocketMethod(_port);
     }

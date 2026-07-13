@@ -115,7 +115,7 @@ namespace SocketModule
         }
         int Recv(std::string *buff) override
         {
-            char buffer[1024];
+            char buffer[4096*2];
             ssize_t n = ::recv(_socket, buffer, sizeof(buffer) - 1, 0);
             if (n > 0)
             {

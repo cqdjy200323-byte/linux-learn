@@ -2,7 +2,7 @@
 #include "Protocol.hpp"
 #include"TcpServer.hpp"
 #include"NetCal.hpp"
-
+#include <unistd.h>
 using namespace SocketModule;
 void Usage(std::string proc)
 {
@@ -16,6 +16,12 @@ int main(int argc, char *argv[])
         Usage(argv[0]);
         exit(USAGE_ERR);
     }
+
+    std::cout << "服务器已经启动，已经是一个守护进程了" << std::endl;
+
+    daemon(0,0);
+
+    Enable_File_Log_Strategy();
 
     std::unique_ptr<Cal> nt = std::make_unique<Cal>();
 

@@ -29,6 +29,7 @@ namespace SocketModule
         virtual void Close() = 0;
         virtual int Recv(std::string *buff) = 0;
         virtual int Send(const std::string &message) = 0;
+        virtual int Connect(const std::string &server_ip, uint16_t port) = 0;
 
     public:
         void BuildTcpSocketMethod(uint16_t port, int backlog = gbacklog)
@@ -36,6 +37,11 @@ namespace SocketModule
             SocketOrDie();
             BindOrDie(port);
             ListenOrDie(backlog);
+        }
+
+        void BuildTcpClientSocketMethod()
+        {
+            SocketOrDie();
         }
 
     private:
@@ -122,6 +128,12 @@ namespace SocketModule
         int Send(const std::string &message) override
         {
             return ::send(_socket, message.c_str(), message.size(), 0);
+        }
+
+        int Connect(const std::string &server_ip, uint16_t port) override
+        {
+            InetAddr server(server_ip, port);
+            return ::connect(_socket, server.NetAddrPtr(), server.NetAddrLen());
         }
 
     private:

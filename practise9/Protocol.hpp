@@ -4,8 +4,7 @@
 #include <memory>
 #include "Socket.hpp"
 #include <jsoncpp/json/json.h>
-#include"Common.hpp"
-
+#include "Common.hpp"
 
 using namespace SocketModule;
 
@@ -60,6 +59,7 @@ public:
     {
         return _oper;
     }
+
 private:
     int _x;
     int _y;
@@ -107,6 +107,11 @@ public:
     {
         _code = code;
     }
+
+    void ShowResult()
+    {
+        std::cout << "计算结果是: " << _result << "[" << _code << "]" << std::endl;
+    }
     ~Response() {}
 
 private:
@@ -121,8 +126,13 @@ using func_t = std::function<Response(Request &req)>;
 class Protocol
 {
 public:
+
+    Protocol()
+    {
+    }
+    
     Protocol(func_t func)
-    : _func(func)
+        : _func(func)
     {
     }
 
@@ -157,24 +167,25 @@ public:
             if (n > 0)
             {
                 std::string json_package;
-                bool ret = DeCode(buffer_queue, &json_package);
-                if (!ret)
-                    continue;
-                Request req;
-                bool ok = req.Deserialize(json_package);
-                if (!ok)
-                    continue;
+                while (DeCode(buffer_queue, &json_package))
+                {
+                    LOG(LogLevel::DEBUG) << client.StringAddr() << " 请求: " << json_package;
+                    Request req;
+                    bool ok = req.Deserialize(json_package);
+                    if (!ok)
+                        continue;
 
-                Response resp = _func(req);
+                    Response resp = _func(req);
 
-                // 4. 序列化
-                std::string json_str = resp.Serialize();
+                    // 4. 序列化
+                    std::string json_str = resp.Serialize();
 
-                // 5. 添加自定义长度
-                std::string send_str = EnCode(json_str); // 携带长度的应答报文了"len\r\n{result:XXX, code:XX}\r\n"
+                    // 5. 添加自定义长度
+                    std::string send_str = EnCode(json_str); // 携带长度的应答报文了"len\r\n{result:XXX, code:XX}\r\n"
 
-                // 6. 直接发送
-                sock->Send(send_str);
+                    // 6. 直接发送
+                    sock->Send(send_str);
+                }
             }
             else if (n == 0)
             {
@@ -187,6 +198,59 @@ public:
                 break;
             }
         }
+    }
+
+    bool GetResponse(std::shared_ptr<Socket> &client, std::string &resp_buff, Response *resp)
+    {
+        while (true)
+        {
+            int n = client->Recv(&resp_buff);
+            if (n > 0)
+            {
+                // std::cout << "-----------resp_buffer--------------" << std::endl;
+                // std::cout << resp_buff << std::endl;
+                // std::cout << "------------------------------------" << std::endl;
+
+                // 成功
+                std::string json_package;
+                // 1. 解析报文，提取完整的json请求，如果不完整，就让服务器继续读取
+                // bool ret = Decode(resp_buff, &json_package);
+                // if (!ret)
+                //     continue;
+
+                while (DeCode(resp_buff, &json_package))
+                {
+                    // std::cout << "----------response json---------------" << std::endl;
+                    // std::cout << json_package << std::endl;
+                    // std::cout << "--------------------------------------" << std::endl;
+
+                    // std::cout << "-----------resp_buffer--------------" << std::endl;
+                    // std::cout << resp_buff << std::endl;
+                    // std::cout << "------------------------------------" << std::endl;
+                    // 2. 走到这里，我能保证，我一定拿到了一个完整的应答json报文
+                    // 2. 反序列化
+                    resp->Deserialize(json_package);
+                }
+                return true;
+            }
+            else if (n == 0)
+            {
+                std::cout << "server quit " << std::endl;
+                return false;
+            }
+            else
+            {
+                std::cout << "recv error" << std::endl;
+                return false;
+            }
+        }
+    }
+
+    std::string BuildRequestString(int x, int y, char oper)
+    {
+        Request req(x, y, oper);
+        std::string json_req = req.Serialize();
+        return EnCode(json_req);
     }
     ~Protocol()
     {
